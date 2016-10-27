@@ -1,0 +1,45 @@
+#!/bin/bash
+#
+# SYNOPSIS
+#		update-user <username> <password> <name> <surname>
+# 
+# DESCRIPTION
+#		Updates the specifie user.
+#
+#		References:
+# 		https://geoconfess.herokuapp.com/apidoc/V1/credentials/update.html
+
+script=$(basename $0)
+bin=$(dirname $0)
+source "$bin/geoconfess-kit"
+
+function show_usage {
+	echo "usage: $script <username> <password> <name> <surname>"
+	exit 1
+}
+
+# User auth info.
+username="$1"
+password="$2"
+check_arg "username" "$username" || show_usage
+check_arg "password" "$password" || show_usage
+
+# User login.
+access_token=$($bin/oauth-token $username $password)
+test $? != 0 && exit 1
+
+# User info
+name="$3"
+surname="$4"
+check_arg "name"    "$name"   || show_usage
+check_arg "surname" "surname" || show_usage
+
+# User information.
+response=$(curl --silent \
+	-F access_token=$access_token \
+	-F user[email]=$username \
+	-F user[password]=$password \
+	-F user[name]=$name \
+	-F user[surname]=$surname \
+	-X PUT "$geoconfess_url/api/v1/me")
+echo $response | json_pp

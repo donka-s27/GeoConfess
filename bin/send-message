@@ -1,0 +1,43 @@
+#!/bin/bash
+#
+# SYNOPSIS
+#		send-message <username> <password> <recipient_id> <text>
+# 
+# DESCRIPTION
+#		Sends a text message to the specified user. 
+#
+#		References:
+# 		https://geoconfess.herokuapp.com/apidoc/V1/messages/create.html
+
+script=$(basename $0)
+bin=$(dirname $0)
+source "$bin/geoconfess-kit"
+
+function show_usage {
+	echo "usage: $script <username> <password> <recipient_id> <text>"
+	exit 1
+}
+
+# User auth info.
+username="$1"
+password="$2"
+check_arg "username" "$username" || show_usage
+check_arg "password" "$password" || show_usage
+
+# User login.
+access_token=$($bin/oauth-token $username $password)
+test $? != 0 && exit 1
+
+# Message parameters.
+recipient_id="$3"
+text="$4"
+check_arg "recipient_id" "$recipient_id" || show_usage
+check_arg "text"         "$text"         || show_usage
+
+# Sends message.
+message_data=$(curl --silent \
+	-F access_token=$access_token \
+	-F message[recipient_id]=$recipient_id \
+	-F message[text]=$text \
+	-X POST "$geoconfess_url/api/v1/messages")
+echo $message_data | json_pp

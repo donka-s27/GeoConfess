@@ -1,0 +1,42 @@
+#!/bin/bash
+#
+# SYNOPSIS
+#		send-meet-request <username> <password> <priest_id>
+# 
+# DESCRIPTION
+#		Sends a ne meet request to the specified priest. 
+#
+#		References:
+# 		https://geoconfess.herokuapp.com/apidoc/V1/meet_requests/create.html
+
+script=$(basename $0)
+bin=$(dirname $0)
+source "$bin/geoconfess-kit"
+
+function show_usage {
+	echo "usage: $script <username> <password> <priest_id>"
+	exit 1
+}
+
+# User auth info.
+username="$1"
+password="$2"
+check_arg "username" "$username" || show_usage
+check_arg "password" "$password" || show_usage
+
+# User login.
+access_token=$($bin/oauth-token $username $password)
+test $? != 0 && exit 1
+
+# Meet request parameters.
+priest_id="$3"
+check_arg "priest_id" "$priest_id" || show_usage
+
+# Sends message.
+request_data=$(curl --silent \
+	-F access_token=$access_token \
+	-F request[priest_id]=$priest_id \
+	-F request[latitude]=-23 \
+	-F request[longitude]=-43.32 \
+	-X POST "$geoconfess_url/api/v1/requests")
+echo $request_data | json_pp
